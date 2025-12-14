@@ -7,7 +7,13 @@ if TYPE_CHECKING:
 from ..types import BshResponse, BshError
 
 # Type aliases for callbacks
-BshClientFn = Callable[["BshClientFnParams"], Any]  # Returns requests.Response-like object
+# BshClientFn should return an object with:
+# - ok: bool (True for 2xx status codes)
+# - status_code: int
+# - json() -> dict method
+# - content: bytes (for blob responses)
+# - text: str
+BshClientFn = Callable[["BshClientFnParams"], Any]  # Returns HTTP response-like object
 BshAuthFn = Callable[[], Any]  # Returns AuthToken or None
 BshRefreshTokenFn = Callable[[], Any]  # Returns str or None
 BshPostInterceptor = Callable[[BshResponse, Optional["BshClientFnParams"]], Any]  # Returns BshResponse

@@ -21,11 +21,11 @@ class BshEngine:
 
     def __init__(
         self,
-        host: Optional[str] = None,
+        host: str,
+        client_fn: BshClientFn,
         api_key: Optional[str] = None,
         jwt_token: Optional[str] = None,
         refresh_token: Optional[str] = None,
-        client_fn: Optional[BshClientFn] = None,
         auth_fn: Optional[BshAuthFn] = None,
         refresh_token_fn: Optional[BshRefreshTokenFn] = None,
         post_interceptors: Optional[List[BshPostInterceptor]] = None,

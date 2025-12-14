@@ -2,7 +2,6 @@
 import json
 import base64
 from typing import Optional, Any, Dict, Callable, List
-import requests
 from ..types import BshResponse, BshError, is_ok, AuthToken
 from .types import (
     BshClientFn,
@@ -28,56 +27,26 @@ class BshClientFnParams:
         self.bsh_options = bsh_options
         self.api = api
 
-
-def default_client_fn(params: BshClientFnParams) -> requests.Response:
-    """Default HTTP client function using requests"""
-    method = params.options.get("method", "GET")
-    url = params.path
-    headers = params.options.get("headers", {})
-    body = params.options.get("body")
-    
-    # Handle form data
-    if params.options.get("request_format") == "form":
-        # body should be a dict with "files" and "data" keys
-        if isinstance(body, dict):
-            files = body.get("files")
-            data = body.get("data", {})
-            # Remove Content-Type header for multipart/form-data
-            headers.pop("Content-Type", None)
-            return requests.request(method, url, headers=headers, files=files, data=data)
-        return requests.request(method, url, headers=headers, data=body)
-    
-    # Handle JSON
-    json_data = None
-    if body and params.options.get("request_format") != "form":
-        if isinstance(body, dict):
-            json_data = body
-        else:
-            json_data = body
-    
-    return requests.request(method, url, headers=headers, json=json_data)
-
-
 class BshClient:
     """HTTP client for BSH Engine API"""
 
     def __init__(
         self,
-        host: Optional[str] = None,
-        http_client: Optional[BshClientFn] = None,
+        host: str,
+        http_client: BshClientFn,
         auth_fn: Optional[BshAuthFn] = None,
         refresh_token_fn: Optional[BshRefreshTokenFn] = None,
         bsh_engine: Optional[Any] = None,
     ):
-        self.host = host or ""
-        self.http_client = http_client or default_client_fn
+        self.host = host
+        self.http_client = http_client
         self.auth_fn = auth_fn
         self.refresh_token_fn = refresh_token_fn
         self.bsh_engine = bsh_engine
 
     def _handle_response(
         self,
-        response: requests.Response,
+        response,
         params: BshClientFnParams,
         response_type: str = "json",
     ) -> Optional[Any]:

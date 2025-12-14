@@ -68,10 +68,94 @@ venv\Scripts\activate
 
 ## Quick Start
 
+The BSH Engine SDK requires you to provide your own HTTP client function. This makes the library lightweight and allows you to use your preferred HTTP library (requests, httpx, aiohttp, etc.).
+
 ```python
 from bshengine import BshEngine
+import requests
 
-bsh_services = BshEngine(host='https://your-instance.com')
+def http_client_fn(params):
+    """HTTP client function using requests library"""
+    method = params.options.get("method", "GET")
+    url = params.path
+    headers = params.options.get("headers", {})
+    body = params.options.get("body")
+    
+    # Handle form data
+    if params.options.get("request_format") == "form":
+        # body should be a dict with "files" and "data" keys
+        if isinstance(body, dict):
+            files = body.get("files")
+            data = body.get("data", {})
+            # Remove Content-Type header for multipart/form-data
+            headers.pop("Content-Type", None)
+            return requests.request(method, url, headers=headers, files=files, data=data)
+        return requests.request(method, url, headers=headers, data=body)
+    
+    # Handle JSON
+    json_data = None
+    if body and params.options.get("request_format") != "form":
+        json_data = body
+    
+    response = requests.request(method, url, headers=headers, json=json_data)
+    # Ensure response has required attributes
+    if not hasattr(response, 'ok'):
+        response.ok = 200 <= response.status_code < 300
+    return response
+
+# Initialize BSH Engine with your HTTP client
+bsh_services = BshEngine(
+    host='https://your-instance.com',
+    client_fn=http_client_fn
+)
+```
+
+## HTTP Client Requirements
+
+Your HTTP client function must:
+- Accept a `BshClientFnParams` object as the only parameter
+- Return a response object with the following attributes/methods:
+  - `ok`: bool (True for 2xx status codes)
+  - `status_code`: int
+  - `json()`: method that returns a dict
+  - `content`: bytes (for blob responses)
+  - `text`: str
+
+### Example with httpx
+
+```python
+import requests
+
+
+def http_client_fn(params) -> requests.Response:
+    """Default HTTP client function using requests"""
+    method = params.options.get("method", "GET")
+    url = params.path
+    headers = params.options.get("headers", {})
+    body = params.options.get("body")
+    
+    # Handle form data
+    if params.options.get("request_format") == "form":
+        # body should be a dict with "files" and "data" keys
+        if isinstance(body, dict):
+            files = body.get("files")
+            data = body.get("data", {})
+            # Remove Content-Type header for multipart/form-data
+            headers.pop("Content-Type", None)
+            return requests.request(method, url, headers=headers, files=files, data=data)
+        return requests.request(method, url, headers=headers, data=body)
+    
+    # Handle JSON
+    json_data = None
+    if body and params.options.get("request_format") != "form":
+        if isinstance(body, dict):
+            json_data = body
+        else:
+            json_data = body
+    
+    return requests.request(method, url, headers=headers, json=json_data)
+
+bsh_services = BshEngine(host='https://your-instance.com', client_fn=http_client_fn)
 ```
 
 > For full documentation on how to use it visit: [https://docs.bousalih.com/docs/bsh-engine/sdk](https://docs.bousalih.com/docs/bsh-engine/sdk)

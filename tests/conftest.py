@@ -5,27 +5,6 @@ from bshengine import BshEngine, BshClient, AuthToken
 
 
 @pytest.fixture
-def mock_requests(monkeypatch):
-    """Mock requests library"""
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.ok = True
-    mock_response.json.return_value = {
-        "data": [],
-        "code": 200,
-        "status": "OK",
-        "timestamp": 1234567890,
-    }
-    mock_response.content = b"test content"
-    mock_response.text = "test"
-    
-    mock_request = Mock(return_value=mock_response)
-    monkeypatch.setattr("bshengine.client.bsh_client.requests.request", mock_request)
-    
-    return mock_request, mock_response
-
-
-@pytest.fixture
 def mock_client_fn():
     """Mock client function"""
     def client_fn(params):
@@ -52,9 +31,9 @@ def mock_auth_fn():
 
 
 @pytest.fixture
-def engine():
+def engine(mock_client_fn):
     """Create BshEngine instance"""
-    return BshEngine(host="https://api.test.com")
+    return BshEngine("https://api.test.com", mock_client_fn)
 
 
 @pytest.fixture
