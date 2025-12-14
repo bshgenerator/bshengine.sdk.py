@@ -32,3 +32,28 @@ bsh_services = BshEngine(host='https://your-instance.com')
 
 > For full documentation on how to use it visit: [https://docs.bousalih.com/docs/bsh-engine/sdk](https://docs.bousalih.com/docs/bsh-engine/sdk)
 
+## Development
+
+### Running Tests
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run tests with coverage
+pytest --cov=bshengine --cov-report=html
+```
+
+### Building
+
+```bash
+# Build the package
+python -m build
+
+# Install locally
+pip install -e .
+```
+
